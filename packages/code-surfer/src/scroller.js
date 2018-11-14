@@ -87,11 +87,15 @@ const scrollTo = (container, content, center, scale, duration) => {
     })
     .start();
 
+  let shouldAnimate = true
+
   function animate(time) {
+    if (!shouldAnimate) return
     requestAnimationFrame(animate);
     TWEEN.update(time);
   }
   requestAnimationFrame(animate);
+  return () => shouldAnimate = false
 };
 
 const contentClassName = "scroll-content";
@@ -101,6 +105,7 @@ export class Container extends React.Component {
   constructor(props) {
     super(props);
     this.containerRef = React.createRef();
+    this.stopRafLoopFuncs = []
   }
 
   animate(duration) {
@@ -117,11 +122,14 @@ export class Container extends React.Component {
       firstSelected,
       lastSelected
     );
-    scrollTo(container, content, center, scale, duration);
+    this.stopRafLoopFuncs.push(scrollTo(container, content, center, scale, duration));
   }
 
   componentDidMount() {
     this.animate(1);
+  }
+  componentWillUnmount () {
+    this.stopRafLoopFuncs.forEach(stop=> stop())
   }
 
   componentDidUpdate() {
